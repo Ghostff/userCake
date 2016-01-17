@@ -294,12 +294,26 @@ function fetchAllUsers()
 }
 
 //Retrieve complete user information by username, token or ID
-function fetchUserDetails($username=NULL,$token=NULL, $id=NULL)
+function fetchUserDetails($username=NULL,$token=NULL, $id=NULL,$email=NULL,$display_name=NULL)
 {
 	global $mysqli,$db_table_prefix; 
-	if($username!=NULL) 
-	{  
-		$stmt = $mysqli->prepare("SELECT 
+	if($username!=null) {
+		$column = "user_name";
+		$data = $username;
+	}
+	else if($token!=null) {
+		$column = "activation_token";
+		$data = $token;
+	}
+	else if($id!=null) {
+		$column = "id";
+		$data = $id;
+	}
+	else if($email!=null) {
+		$column = "email";
+		$data = "$email";
+	}
+	$stmt = $mysqli->prepare("SELECT 
 			id,
 			user_name,
 			display_name,
@@ -314,52 +328,9 @@ function fetchUserDetails($username=NULL,$token=NULL, $id=NULL)
 			last_sign_in_stamp
 			FROM ".$db_table_prefix."users
 			WHERE
-			user_name = ?
+			$column = ?
 			LIMIT 1");
-		$stmt->bind_param("s", $username);
-	}
-	elseif($id!=NULL)
-	{
-		$stmt = $mysqli->prepare("SELECT 
-			id,
-			user_name,
-			display_name,
-			password,
-			email,
-			activation_token,
-			last_activation_request,
-			lost_password_request,
-			active,
-			title,
-			sign_up_stamp,
-			last_sign_in_stamp
-			FROM ".$db_table_prefix."users
-			WHERE
-			id = ?
-			LIMIT 1");
-		$stmt->bind_param("i", $id);
-	}
-	else
-	{
-		$stmt = $mysqli->prepare("SELECT 
-			id,
-			user_name,
-			display_name,
-			password,
-			email,
-			activation_token,
-			last_activation_request,
-			lost_password_request,
-			active,
-			title,
-			sign_up_stamp,
-			last_sign_in_stamp
-			FROM ".$db_table_prefix."users
-			WHERE
-			activation_token = ?
-			LIMIT 1");
-		$stmt->bind_param("s", $token);
-	}
+	$stmt->bind_param("s", $data);
 	$stmt->execute();
 	$stmt->bind_result($id, $user, $display, $password, $email, $token, $activationRequest, $passwordRequest, $active, $title, $signUp, $signIn);
 	while ($stmt->fetch()){
